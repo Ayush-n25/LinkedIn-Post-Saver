@@ -1,6 +1,6 @@
 # LinkedIn Post Saver
 
-LinkedIn Post Saver is a simple Flutter application that allows users to save LinkedIn posts categorized by different categories and store them in Firebase Firestore.
+LinkedIn Post Saver is a simple Flutter application that allows users to save LinkedIn posts categorized by different categories and store them in Local Storage.
 
 ## Features
 
@@ -17,25 +17,25 @@ LinkedIn Post Saver is a simple Flutter application that allows users to save Li
 git clone https://github.com/Ayush-n25/LinkedIn-Post-Saver.git
 ```
 
-2. Set up a Firebase project in the [Firebase Console](https://console.firebase.google.com/).
-
-3. Add a Flutter app to your Firebase project and follow the setup instructions to add Firebase configuration files to your Flutter app.
-
-4. Add the necessary Firebase packages to your Flutter app's `pubspec.yaml` file:
+2. Set up a Flutter project and download all the dependencies in pubspec.yml file
 
 ```yaml
 dependencies:
   flutter:
     sdk: flutter
-  cloud_firestore: ^2.5.2
+  path_provider: ^2.1.3
+  clipboard: 0.1.3
 ```
 
-5. Initialize Firebase in your Flutter app. Follow the instructions provided by Firebase after adding your app to the Firebase project.
+3. Run the flutter project
 
-6. Run the app on your preferred device or emulator:
-
-```bash
+```cmd
 flutter run
+```
+
+4. (optional) run flutter build apk --release and find apk in build/app/outputs/flutter-apk/app-release.apk
+```cmd
+flutter build apk --release
 ```
 
 ## Usage
@@ -44,7 +44,3 @@ flutter run
 - Add a new LinkedIn post by selecting a category or entering a new one and providing the LinkedIn post link.
 - View all saved posts categorized by their respective categories.
 - To remove a post, tap on the delete icon next to the post.
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or pull requests for any improvements or features you'd like to see in the app.
