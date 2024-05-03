@@ -1,4 +1,10 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:clipboard/clipboard.dart';
 
 void main() {
   runApp(MyApp());
@@ -9,13 +15,20 @@ class Post {
   final String link;
 
   Post({required this.category, required this.link});
+
+  Map<String, dynamic> toJson() {
+    return {
+      'category': category,
+      'link': link,
+    };
+  }
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'LinkedIn Post Saver-Ayush Naik',
+      title: 'LinkedIn Post Saver',
       theme: ThemeData(
         primarySwatch: Colors.blue,
         visualDensity: VisualDensity.adaptivePlatformDensity,
@@ -32,9 +45,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   Map<String, List<Post>> categoryPosts = {};
-
   List<String> categories = [];
-
   String? selectedCategory;
 
   TextEditingController categoryController = TextEditingController();
@@ -43,18 +54,25 @@ class _HomePageState extends State<HomePage> {
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   @override
+  void initState() {
+    super.initState();
+    _loadPostsFromJson();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'LinkedIn Post Saver- Ayush Naik',
+          'LinkedIn Post Saver',
           style: TextStyle(
-              fontFamily: 'Roboto',
-              fontWeight: FontWeight.bold,
-              fontSize: 24.0,
-              color: Color.fromARGB(255, 251, 251, 251)),
+            fontFamily: 'Roboto',
+            fontWeight: FontWeight.bold,
+            fontSize: 24.0,
+            color: Colors.white,
+          ),
         ),
-        backgroundColor: Color.fromARGB(255, 47, 107, 197),
+        backgroundColor: Colors.blue,
       ),
       body: SingleChildScrollView(
         child: Form(
@@ -155,6 +173,7 @@ class _HomePageState extends State<HomePage> {
                           linkController.clear();
                           categoryController.clear();
                           selectedCategory = null;
+                          _savePostsToJson(); // Save posts to JSON file
                         });
                       }
                     }
@@ -182,17 +201,27 @@ class _HomePageState extends State<HomePage> {
                       return ListTile(
                         title: Text(post.category),
                         subtitle: Text(post.link),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete),
-                          onPressed: () {
-                            setState(() {
-                              categoryPosts[post.category]!.remove(post);
-                              if (categoryPosts[post.category]!.isEmpty) {
-                                categoryPosts.remove(post.category);
-                                categories.remove(post.category);
-                              }
-                            });
-                          },
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: Icon(Icons.delete),
+                              onPressed: () {
+                                setState(() {
+                                  categoryPosts[post.category]!.remove(post);
+                                  if (categoryPosts[post.category]!.isEmpty) {
+                                    categoryPosts.remove(post.category);
+                                    categories.remove(post.category);
+                                  }
+                                  _savePostsToJson(); // Save posts to JSON file
+                                });
+                              },
+                            ),
+                            IconButton(
+                              icon: Icon(Icons.content_paste),
+                              onPressed: _pasteFromClipboard,
+                            ),
+                          ],
                         ),
                       );
                     }).toList(),
@@ -204,5 +233,50 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
+  }
+
+  // Function to save posts to JSON file
+  _savePostsToJson() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/posts.json');
+    Map<String, dynamic> jsonMap = {};
+    categoryPosts.forEach((category, posts) {
+      jsonMap[category] = posts.map((post) => post.toJson()).toList();
+    });
+    file.writeAsString(json.encode(jsonMap));
+  }
+
+  // Function to load posts from JSON file
+  _loadPostsFromJson() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/posts.json');
+      if (await file.exists()) {
+        final jsonMap = json.decode(await file.readAsString());
+        jsonMap.forEach((category, postsJson) {
+          List<Post> posts = (postsJson as List)
+              .map((postJson) => Post(
+                    category: postJson['category'],
+                    link: postJson['link'],
+                  ))
+              .toList();
+          categoryPosts[category] = posts;
+          categories.add(category);
+        });
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error loading posts: $e');
+    }
+  }
+
+  // Function to paste from clipboard
+  _pasteFromClipboard() async {
+    ClipboardData? clipboardText = await Clipboard.getData(Clipboard.kTextPlain);
+    if (clipboardText != null) {
+      setState(() {
+        linkController.text = clipboardText as String;
+      });
+    }
   }
 }
